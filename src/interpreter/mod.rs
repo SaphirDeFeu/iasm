@@ -20,6 +20,8 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
     let mut stack_ptr: u8 = 0;
     let mut sr_stack_ptr: u8 = 0;
     let mut f_zero: bool = false;
+    let mut f_less: bool = false;
+    let mut f_more: bool = false;
     super::louden("INTERPRETER".on_green(), "Finding labels...", loud);
     // Identify labels
     for i in 0..tokens.len() {
@@ -246,11 +248,9 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                     "cmp" => {
                         // Compares two values at the specified data values
                         // If they're equal, then the zero flag is set to true
-                        if data[values[0] as usize] == data[values[1] as usize] {
-                            f_zero = true;
-                        } else {
-                            f_zero = false;
-                        }
+                        f_zero = data[values[0] as usize] == data[values[1] as usize];
+                        f_less = data[values[0] as usize] < data[values[1] as usize];
+                        f_more = data[values[0] as usize] > data[values[1] as usize];
                     }
                     "jmp" => {
                         // Jumps to a specified location
@@ -292,6 +292,32 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                             }
                         }
                     }
+                    "blt" => {
+                        if f_less {
+                            let _label = str_values[0];
+                            if labels.contains_key(_label) {
+                                i = match labels.get(_label) {
+                                    Some(value) => *value,
+                                    None => i,
+                                };
+                            } else {
+                                i = values[0] as usize;
+                            }
+                        }
+                    }
+                    "bgt" => {
+                        if f_more {
+                            let _label = str_values[0];
+                            if labels.contains_key(_label) {
+                                i = match labels.get(_label) {
+                                    Some(value) => *value,
+                                    None => i,
+                                };
+                            } else {
+                                i = values[0] as usize;
+                            }
+                        }
+                    }
                     "jsr" => {
                         subroutine_stack[sr_stack_ptr as usize] = i;
                         if sr_stack_ptr == 0xFE {
@@ -316,6 +342,44 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                             sr_stack_ptr -= 1;
                         }
                         i = subroutine_stack[sr_stack_ptr as usize];
+                    }
+                    "and" => {
+                        register_a = register_a & values[0];
+                    }
+                    "not" => {
+                        if register_a == 1 {
+                            register_a = 0;
+                        } else if register_a == 0 {
+                            register_a = 1;
+                        } else {
+                            super::throw(
+                                "ERR_BIT_MANIPULATION_IMPOSSIBLE",
+                                "Accumulator must be either 1 or 0 for `not` operation to function! To invert all bits, use `xor $1111111111111111`",
+                                0x304,
+                                file!(),
+                                v,
+                                line!(),
+                                true
+                            );
+                        }
+                    }
+                    "xor" => {
+                        register_a = register_a ^ values[0];
+                    }
+                    "or" => {
+                        register_a = register_a | values[0];
+                    }
+                    "shl" => {
+                        register_a = register_a << values[0];
+                    }
+                    "shr" => {
+                        register_a = register_a >> values[0];
+                    }
+                    "rol" => {
+                        register_a = ((register_a << values[0]) | (register_a >> (32 - values[0]))) & 0xFFFFFFFF;
+                    }
+                    "ror" => {
+                        register_a = ((register_a >> values[0]) | (register_a << (32 - values[0]))) & 0xFFFFFFFF;
                     }
                     "nop" => {
                         // No-operation for a certain time

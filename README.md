@@ -62,17 +62,41 @@ Values follow the syntax of `lda`.
 Subtracts a specified value to the accumulator's value.
 Values follow the syntax of `lda`.
 ## `cmp <address1> <address2>`
-Compares the values at `<address1>` and `<address2>`. If they're equal, then the `zero` flag is set to true. Otherwise is set to false.
+Compares the values at `<address1>` and `<address2>`. If they're equal, then the `zero` flag is set to true. Otherwise is set to false.  
+If the value at `<address1>` is less than the value at `<address2>`, then the `less` flag is set to true. Otherwise, is set to false.  
+If the value at `<address1>` is less than the value at `<address2>`, then the `more` flag is set to true. Otherwise, is set to false.
 ## `jmp <label|token>`
 Jumps to a specified label or token (It is recommended to use labels).
 ## `beq <label|token>`
 Used in conjunction to `cmp`. Does the same thing as `jmp` but only when the `zero` flag is true (if `cmp` was successful).
 ## `bne <label|token>`
 Inverse of `beq`.
+## `blt <label|token>`
+Jumps if the value 1 is less than the value 2 after `cmp`
+## `bgt <label|token>`
+Jumps if the value 1 is greater than the value 2 after `cmp`
 ## `jsr <label|token>`
 Does the same thing as `jmp` but can be used to return from the jump (see `rsr`).
 ## `rsr`
-Returns to the token `jsr` left off. Basically a `return` statement from a function.
+Returns to the token where `jsr` left off. Basically a `return` statement from a function.
+## `and <value>`
+Takes the bits of the value in the accumulator and `and`'s them with the specified `<value>`
+## `not`
+If the value in the accumulator is 1, it will be set to 0.  
+If it's 0, it will be set to 1.  
+Otherwise, it'll throw an error. To invert multiple bits, use the `xor` operation (see below).
+## `xor <value>`
+Takes the bits of the value in the accumulator and `xor`'s them with the specified `<value>`
+## `or <value>`
+Takes the bits of the value in the accumulator and `or`'s them with the specified `<value>`
+## `shl <value>`
+Shifts the bits in the accumulator by a specified amount `<value>` to the left
+## `shr <value>`
+Shifts the bits in the accumulator by a specified amount `<value>` to the right
+## `rol <value>`
+Rotates the bits in the accumulator by a specified amount `<value>` to the left (take into account the fact that the accumulator uses 32-bit)
+## `ror <value>`
+Rotates the bits in the accumulator by a specified amount `<value>` to the right (take into account the fact that the accumulator uses 32-bit)
 ## `nop [time]`
 Stops execution for a specified amount of time. If no time is specified, then execution is stopped for the minimal amount of time.
 ## `mov <reg> <value>`

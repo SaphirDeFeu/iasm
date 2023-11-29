@@ -50,7 +50,7 @@ Said value may be presented under different forms:
 
 Additional information is that values can take up the form of hexadecimal or binary format using the syntax `$<hex value>` or `%<bin value>`.  
 ## `sta <address>`
-Stores the accumulator's value at address `<address>`
+Stores the accumulator's value at address `<address>`. The address array has an available space of 65536 slots of 32-bit unsigned integers.
 ## `pha`
 Pushes the accumulator's value onto the stack
 ## `pla`

@@ -344,7 +344,11 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                         i = subroutine_stack[sr_stack_ptr as usize];
                     }
                     "and" => {
-                        register_a = register_a & values[0];
+                        if imvalue {
+                            register_a = register_a & values[0];
+                        } else {
+                            register_a = register_a & data[values[0] as usize];
+                        }
                     }
                     "not" => {
                         if register_a == 1 {
@@ -364,22 +368,46 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                         }
                     }
                     "xor" => {
-                        register_a = register_a ^ values[0];
+                        if imvalue {
+                            register_a = register_a ^ values[0];
+                        } else {
+                            register_a = register_a ^ data[values[0] as usize];
+                        }
                     }
                     "or" => {
-                        register_a = register_a | values[0];
+                        if imvalue {
+                            register_a = register_a | values[0];
+                        } else {
+                            register_a = register_a | data[values[0] as usize];
+                        }
                     }
                     "shl" => {
-                        register_a = register_a << values[0];
+                        if imvalue {
+                            register_a = register_a << values[0];
+                        } else {
+                            register_a = register_a << data[values[0] as usize];
+                        }
                     }
                     "shr" => {
-                        register_a = register_a >> values[0];
+                        if imvalue {
+                            register_a = register_a >> values[0];
+                        } else {
+                            register_a = register_a >> data[values[0] as usize];
+                        }
                     }
                     "rol" => {
-                        register_a = ((register_a << values[0]) | (register_a >> (32 - values[0]))) & 0xFFFFFFFF;
+                        if imvalue {
+                            register_a = ((register_a << values[0]) | (register_a >> (32 - values[0]))) & 0xFFFFFFFF;
+                        } else {
+                            register_a = ((register_a << data[values[0] as usize]) | (register_a >> (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
+                        }
                     }
                     "ror" => {
-                        register_a = ((register_a >> values[0]) | (register_a << (32 - values[0]))) & 0xFFFFFFFF;
+                        if imvalue {
+                            register_a = ((register_a >> values[0]) | (register_a << (32 - values[0]))) & 0xFFFFFFFF;
+                        } else {
+                            register_a = ((register_a >> data[values[0] as usize]) | (register_a << (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
+                        }
                     }
                     "nop" => {
                         // No-operation for a certain time

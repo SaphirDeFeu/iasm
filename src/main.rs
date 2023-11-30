@@ -24,7 +24,7 @@ pub struct Config {
 }
 
 fn main() {
-    let semversion = "1.0.0";
+    let semversion = "1.1.0";
 
     // Fetch latest version
     let url = "https://iasm-version-controller.saphirdefeu.repl.co/";

@@ -4,6 +4,8 @@
 
 use serde::{Deserialize, Serialize};
 use colored::{Colorize, ColoredString};
+use reqwest;
+use semver::Version;
 
 mod lexer;
 mod interpreter;
@@ -22,6 +24,35 @@ pub struct Config {
 }
 
 fn main() {
+    let semversion = "1.0.0";
+
+    // Fetch latest version
+    let url = "https://iasm-version-controller.saphirdefeu.repl.co/";
+
+    let response: String = match reqwest::blocking::get(url) {
+        Ok(value) => {
+            match value.text() {
+                Ok(textvalue) => textvalue,
+                Err(e) => semversion.to_string(),    
+            }
+        },
+        Err(e) => semversion.to_string(),
+    };
+
+    if let Ok(version) = Version::parse(&response) {
+        let latest_major = version.major;
+        let latest_minor = version.minor;
+        let latest_patch = version.patch;
+
+        if let Ok(current) = Version::parse(semversion) {
+            let current_major = current.major;
+            let current_minor = current.minor;
+            let current_patch = current.patch;
+
+            check_version(latest_major, latest_minor, latest_patch, current_major, current_minor, current_patch, &response);
+        }
+    }
+
     // Variables
     let message: &str = "IASM - Interpreted Assembly
 
@@ -34,8 +65,7 @@ Options:
   -L, --loud     Allow printing of IASM log messages
   -c, --config   Specify a config file that the interpreter will use to interpret your specific circumstances [DOESN'T WORK]
 ";
-
-    let version: &str = "iasm 1.0.0 by SaphirDeFeu";
+    let version: &str = &format!("iasm {} by SaphirDeFeu", semversion);
     let mut loud: bool = false;
 
     // Fetch and interpret the CLI arguments
@@ -121,4 +151,16 @@ pub fn louden(debug_type: ColoredString, debug_msg: &str, loud: bool) {
         return;
     }
     println!("   {0} {1}", debug_type, debug_msg);
+}
+
+fn check_version(lmm: u64, lm: u64, lp: u64, cmm: u64, cm: u64, cp: u64, latest_version: &str) {
+    if lmm <= cmm { // Same major version
+        if lm <= cm { // Same minor version
+            if lp <= cp { // Same patch version
+                return;
+            }
+        }
+    }
+    // One of them is later
+    println!(" {} >> {}", "Newer version available".bright_green(), latest_version);
 }

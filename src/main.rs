@@ -24,7 +24,7 @@ pub struct Config {
 }
 
 fn main() {
-    let semversion = "1.1.0";
+    let semversion = "1.1.1";
 
     // Variables
     let message: &str = "IASM - Interpreted Assembly

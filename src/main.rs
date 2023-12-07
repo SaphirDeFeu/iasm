@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use colored::{ColoredString, Colorize};
-use reqwest;
+use curl::easy::Easy;
 use serde::{Deserialize, Serialize};
 
 mod interpreter;
@@ -51,13 +51,21 @@ Options:
                 louden("CLI".on_yellow(), "Fetching versions", true);
                 let url = "https://iasm-version-control.saphirdefeu.repl.co/";
 
-                let response: String = match reqwest::blocking::get(url) {
-                    Ok(value) => match value.text() {
-                        Ok(textvalue) => textvalue,
-                        Err(e) => semversion.to_string(),
-                    },
-                    Err(e) => semversion.to_string(),
-                };
+                let mut dst = Vec::new();
+                {
+                    let mut easy = Easy::new();
+                    easy.url(url).unwrap();
+
+                    let mut transfer = easy.transfer();
+                    transfer
+                        .write_function(|data| {
+                            dst.extend_from_slice(data);
+                            Ok(data.len())
+                        })
+                        .unwrap();
+                    transfer.perform().unwrap();
+                }
+                let response: String = from_vec_to_str(dst);
 
                 let latest = parse_version(&response);
                 let latest_major = latest[0];
@@ -242,14 +250,19 @@ fn parse_version(version: &str) -> Vec<u64> {
     let mut versions: Vec<u64> = vec![];
     for version_type in v {
         let parsed_version_type = match version_type.parse::<u64>() {
-            Ok(result) => {
-                result
-            },
-            Err(e) => {
-                0
-            },
+            Ok(result) => result,
+            Err(e) => 0,
         };
         versions.push(parsed_version_type);
     }
     return versions;
+}
+
+fn from_vec_to_str(vec_used: Vec<u8>) -> String {
+    let mut char_vec: Vec<char> = Vec::new();
+    for _char in vec_used {
+        let character = _char as char;
+        char_vec.push(character);
+    }
+    return char_vec.into_iter().collect::<String>();
 }

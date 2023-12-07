@@ -4,7 +4,6 @@
 
 use colored::{ColoredString, Colorize};
 use reqwest;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 
 mod interpreter;
@@ -24,7 +23,7 @@ pub struct Config {
 }
 
 fn main() {
-    let semversion = "1.1.1";
+    let semversion = "1.1.2";
 
     // Variables
     let message: &str = "IASM - Interpreted Assembly
@@ -60,28 +59,26 @@ Options:
                     Err(e) => semversion.to_string(),
                 };
 
-                if let Ok(version) = Version::parse(&response) {
-                    let latest_major = version.major;
-                    let latest_minor = version.minor;
-                    let latest_patch = version.patch;
+                let latest = parse_version(&response);
+                let latest_major = latest[0];
+                let latest_minor = latest[1];
+                let latest_patch = latest[2];
 
-                    if let Ok(current) = Version::parse(semversion) {
-                        let current_major = current.major;
-                        let current_minor = current.minor;
-                        let current_patch = current.patch;
+                let current = parse_version(semversion);
+                let current_major = current[0];
+                let current_minor = current[1];
+                let current_patch = current[2];
 
-                        check_version(
-                            latest_major,
-                            latest_minor,
-                            latest_patch,
-                            current_major,
-                            current_minor,
-                            current_patch,
-                            &response,
-                            &semversion
-                        );
-                    }
-                }
+                check_version(
+                    latest_major,
+                    latest_minor,
+                    latest_patch,
+                    current_major,
+                    current_minor,
+                    current_patch,
+                    &response,
+                    &semversion,
+                );
                 std::process::exit(0);
             }
             "-h" | "--help" => {
@@ -211,17 +208,23 @@ pub fn louden(debug_type: ColoredString, debug_msg: &str, loud: bool) {
     println!("   {0} {1}", debug_type, debug_msg);
 }
 
-fn check_version(lmm: u64, lm: u64, lp: u64, cmm: u64, cm: u64, cp: u64, latest_version: &str, version: &str) {
+fn check_version(
+    lmm: u64,
+    lm: u64,
+    lp: u64,
+    cmm: u64,
+    cm: u64,
+    cp: u64,
+    latest_version: &str,
+    version: &str,
+) {
     if lmm <= cmm {
         // Same major version
         if lm <= cm {
             // Same minor version
             if lp <= cp {
                 // Same patch version
-                println!(
-                    " You are running the latest version of iasm ({}) ",
-                    version,
-                );
+                println!(" You are running the latest version of iasm ({}) ", version);
                 return;
             }
         }
@@ -232,4 +235,21 @@ fn check_version(lmm: u64, lm: u64, lp: u64, cmm: u64, cm: u64, cp: u64, latest_
         "Newer version available".bright_green(),
         latest_version
     );
+}
+
+fn parse_version(version: &str) -> Vec<u64> {
+    let v: Vec<&str> = version.split(".").collect::<Vec<&str>>();
+    let mut versions: Vec<u64> = vec![];
+    for version_type in v {
+        let parsed_version_type = match version_type.parse::<u64>() {
+            Ok(result) => {
+                result
+            },
+            Err(e) => {
+                0
+            },
+        };
+        versions.push(parsed_version_type);
+    }
+    return versions;
 }

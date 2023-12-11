@@ -431,11 +431,13 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                                 let mut x: String = String::new();
                                 match std::io::stdin().read_line(&mut x) {
                                     Ok(n) => {
-                                        let split: Vec<char> = x.chars().collect::<Vec<char>>();
+                                        let split: Vec<char> = x.chars().collect::<Vec<char>>().iter().filter(|&&c| c != '\r' && c != '\n').cloned().collect();
                                         let mut j: usize = 0;
-                                        for i in (values[1] as usize)
-                                            ..=(split.len() + (values[1] as usize) - 3)
-                                        {
+                                        let mut limit: usize = split.len() + (values[1] as usize) - 1;
+                                        if values.len() > 2 {
+                                            limit = min(values[2] as usize, split.len()) + (values[1] as usize) - 1;
+                                        }
+                                        for i in (values[1] as usize)..=limit {
                                             data[i] = split[j] as u32;
                                             j += 1;
                                         }
@@ -507,4 +509,12 @@ fn to_u32(string: String, v: &str, exit: bool) -> Option<u32> {
             return None;
         }
     };
+}
+
+fn min(a: usize, b: usize) -> usize {
+    if a < b {
+        return a;
+    } else {
+        return b;
+    }
 }

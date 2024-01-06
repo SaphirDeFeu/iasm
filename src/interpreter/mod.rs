@@ -13,7 +13,7 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
     let mut started: bool = false;
     let mut current_instruction: &str = "";
     let mut param_amount: usize = 0;
-    let mut register_a: u32 = 0;
+    let mut accumulator: u32 = 0;
     let mut data: [u32; 0xFFFF] = [0u32; 0xFFFF];
     let mut stack: [u32; 0xFF] = [0u32; 0xFF];
     let mut subroutine_stack: [usize; 0xFF] = [0usize; 0xFF];
@@ -200,20 +200,20 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                     "lda" => {
                         // Loads a value into register A
                         if imvalue {
-                            register_a = values[0];
+                            accumulator = values[0];
                         } else if mem_used {
-                            register_a = data[data[values[0] as usize] as usize];
+                            accumulator = data[data[values[0] as usize] as usize];
                         } else {
-                            register_a = data[values[0] as usize];
+                            accumulator = data[values[0] as usize];
                         }
                     }
                     "sta" => {
-                        // Stores the value of register_a into the "RAM"
-                        data[values[0] as usize] = register_a;
+                        // Stores the value of accumulator into the "RAM"
+                        data[values[0] as usize] = accumulator;
                     }
                     "pha" => {
                         // Push register A's value into the stack
-                        stack[stack_ptr as usize] = register_a;
+                        stack[stack_ptr as usize] = accumulator;
                         if stack_ptr == 255 {
                             stack_ptr = 0
                         } else {
@@ -227,22 +227,22 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                         } else {
                             stack_ptr -= 1;
                         }
-                        register_a = stack[stack_ptr as usize];
+                        accumulator = stack[stack_ptr as usize];
                     }
                     "add" => {
                         // Adds a number to register A
                         if imvalue {
-                            register_a += values[0];
+                            accumulator += values[0];
                         } else {
-                            register_a += data[values[0] as usize];
+                            accumulator += data[values[0] as usize];
                         }
                     }
                     "sub" => {
                         // Subtracts a number from register A
                         if imvalue {
-                            register_a -= values[0];
+                            accumulator -= values[0];
                         } else {
-                            register_a -= data[values[0] as usize];
+                            accumulator -= data[values[0] as usize];
                         }
                     }
                     "cmp" => {
@@ -345,20 +345,20 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                     }
                     "and" => {
                         if imvalue {
-                            register_a = register_a & values[0];
+                            accumulator = accumulator & values[0];
                         } else {
-                            register_a = register_a & data[values[0] as usize];
+                            accumulator = accumulator & data[values[0] as usize];
                         }
                     }
                     "not" => {
-                        if register_a == 1 {
-                            register_a = 0;
-                        } else if register_a == 0 {
-                            register_a = 1;
+                        if accumulator == 1 {
+                            accumulator = 0;
+                        } else if accumulator == 0 {
+                            accumulator = 1;
                         } else {
                             super::throw(
                                 "ERR_BIT_MANIPULATION_IMPOSSIBLE",
-                                "Accumulator must be either 1 or 0 for `not` operation to function! To invert all bits, use `xor $1111111111111111`",
+                                "Accumulator must be either 1 or 0 for `not` operation to function! To invert all bits, use `xor %1111111111111111`",
                                 0x304,
                                 file!(),
                                 v,
@@ -369,44 +369,44 @@ pub fn interpret(content: &str, v: &str, loud: bool) -> Result<(), std::io::Erro
                     }
                     "xor" => {
                         if imvalue {
-                            register_a = register_a ^ values[0];
+                            accumulator = accumulator ^ values[0];
                         } else {
-                            register_a = register_a ^ data[values[0] as usize];
+                            accumulator = accumulator ^ data[values[0] as usize];
                         }
                     }
                     "or" => {
                         if imvalue {
-                            register_a = register_a | values[0];
+                            accumulator = accumulator | values[0];
                         } else {
-                            register_a = register_a | data[values[0] as usize];
+                            accumulator = accumulator | data[values[0] as usize];
                         }
                     }
                     "shl" => {
                         if imvalue {
-                            register_a = register_a << values[0];
+                            accumulator = accumulator << values[0];
                         } else {
-                            register_a = register_a << data[values[0] as usize];
+                            accumulator = accumulator << data[values[0] as usize];
                         }
                     }
                     "shr" => {
                         if imvalue {
-                            register_a = register_a >> values[0];
+                            accumulator = accumulator >> values[0];
                         } else {
-                            register_a = register_a >> data[values[0] as usize];
+                            accumulator = accumulator >> data[values[0] as usize];
                         }
                     }
                     "rol" => {
                         if imvalue {
-                            register_a = ((register_a << values[0]) | (register_a >> (32 - values[0]))) & 0xFFFFFFFF;
+                            accumulator = ((accumulator << values[0]) | (accumulator >> (32 - values[0]))) & 0xFFFFFFFF;
                         } else {
-                            register_a = ((register_a << data[values[0] as usize]) | (register_a >> (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
+                            accumulator = ((accumulator << data[values[0] as usize]) | (accumulator >> (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
                         }
                     }
                     "ror" => {
                         if imvalue {
-                            register_a = ((register_a >> values[0]) | (register_a << (32 - values[0]))) & 0xFFFFFFFF;
+                            accumulator = ((accumulator >> values[0]) | (accumulator << (32 - values[0]))) & 0xFFFFFFFF;
                         } else {
-                            register_a = ((register_a >> data[values[0] as usize]) | (register_a << (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
+                            accumulator = ((accumulator >> data[values[0] as usize]) | (accumulator << (32 - data[values[0] as usize]))) & 0xFFFFFFFF;
                         }
                     }
                     "nop" => {
